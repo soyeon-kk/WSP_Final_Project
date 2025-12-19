@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>학생식당 관리자 · 실시간 혼잡도</title>
+  {% load static %}
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/blog.css' %}?v=20251219-1">
+</head>
+
+<body class="admin-body">
+  <header class="page-header admin-appbar">
+    <div class="appbar-left">
+      <h1 class="appbar-title">
+        <a href="{% url 'post_list' %}">학생식당 관리자</a>
+      </h1>
+      <p class="appbar-subtitle">실시간 혼잡도 모니터링</p>
+    </div>
+
+    <div class="appbar-right">
+      <a href="{% url 'admin_dashboard' %}" class="btn appbar-btn" style="background:#111827;">📊 대시보드</a>
+      <a href="{% url 'post_list' %}" class="btn appbar-btn" style="background:#7084c8ff;">새로고침</a>
+      <a href="{% url 'post_new' %}" class="btn appbar-btn">＋ 수동 알림 등록</a>
+      <a href="{% url 'admin_logout' %}" class="nav-link">로그아웃</a>
+    </div>
+  </header>
+
+  <main class="content container">
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

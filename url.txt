@@ -1,0 +1,2 @@
+서비스 URL: http://soyeonkk.pythonanywhere.com
+소스코드 git 주소: https://github.com/soyeon-kk/WSP_Final_Project

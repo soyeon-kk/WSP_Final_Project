@@ -1,0 +1,62 @@
+{% extends "blog/base.html" %}
+
+{% block content %}
+  <!-- 로그인 페이지에서만 상단 앱바 버튼들 숨기기 -->
+  <style>
+    .appbar-btn,
+    .nav-link {
+      display: none !important;
+    }
+  </style>
+
+  <div class="page-section" style="max-width: 800px; margin: 40px auto;">
+    <div class="card"
+         style="background:#ffffff;
+                border-radius:24px;
+                padding:32px 40px;
+                box-shadow:0 18px 45px rgba(0,0,0,0.05);">
+
+      <h2 style="font-size:20px; font-weight:700; margin-bottom:16px;">
+        관리자 보안키 로그인
+      </h2>
+
+      <form method="post" style="margin-top:12px;">
+        {% csrf_token %}
+        <label for="security_key" style="font-size:14px; color:#6b7280;">
+          보안키
+        </label>
+        <input type="password"
+               id="security_key"
+               name="security_key"
+               style="
+                 width:100%;
+                 margin-top:6px;
+                 padding:10px 14px;
+                 border-radius:999px;
+                 border:1px solid #e5e7eb;
+                 outline:none;
+               ">
+
+        {% if error %}
+          <p style="color:#ef4444; font-size:13px; margin-top:8px;">
+            {{ error }}
+          </p>
+        {% endif %}
+
+        <button type="submit"
+                style="
+                  margin-top:18px;
+                  padding:8px 20px;
+                  border-radius:999px;
+                  border:none;
+                  background:linear-gradient(135deg,#7084c8ff);
+                  color:#ffffff;
+                  font-weight:600;
+                  cursor:pointer;
+                ">
+          로그인
+        </button>
+      </form>
+    </div>
+  </div>
+{% endblock %}

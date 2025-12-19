@@ -1,0 +1,38 @@
+{% extends 'blog/base.html' %}
+{% load static %}
+
+{% block content %}
+  <article class="post post-detail-card">
+    <header class="post-detail-header">
+      <p class="post-detail-label">알림 상세</p>
+      <h1 class="post-detail-title">{{ post.title }}</h1>
+      <div class="post-detail-meta">
+        <span class="post-detail-date">{{ post.published_date }}</span>
+        {% if post.author %}
+          <span class="post-detail-author">등록자: {{ post.author }}</span>
+        {% endif %}
+      </div>
+    </header>
+
+    <!-- 이미지 -->
+    <div class="detail-image-wrapper">
+      {% if post.image %}
+        <img src="{{ post.image.url }}" alt="{{ post.title }}">
+      {% else %}
+        <img src="{% static 'blog_image/default_error.png' %}" alt="기본 이미지">
+      {% endif %}
+    </div>
+
+    <section class="post-detail-body">
+      <p>{{ post.text|linebreaksbr }}</p>
+    </section>
+
+    <footer class="post-actions post-detail-actions">
+      <a href="{% url 'post_list' %}" class="btn btn-secondary">← 목록으로</a>
+      <div class="post-detail-action-right">
+        <a href="{% url 'post_edit' pk=post.pk %}" class="btn">수정</a>
+        <a href="{% url 'post_delete' pk=post.pk %}" class="btn btn-danger" style="background:#ff4d4f">삭제</a>
+      </div>
+    </footer>
+  </article>
+{% endblock %}

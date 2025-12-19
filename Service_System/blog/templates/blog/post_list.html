@@ -1,0 +1,126 @@
+{% extends 'blog/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="admin-dashboard">
+
+  {# === 상단: 현재 혼잡도 요약 카드 === #}
+  {% with latest=posts.0 %}
+  <section class="admin-hero-card">
+    <div class="hero-top-row">
+      <div class="hero-title-block">
+        <p class="hero-page-title">학생식당</p>
+        <p class="hero-page-subtitle">실시간 혼잡도 · 관리자 화면</p>
+      </div>
+      <div class="hero-time-block">
+        <span class="hero-time-icon">🕒</span>
+        {% if latest %}
+          <span class="hero-time-text">
+            {{ latest.published_date|date:"Y년 n월 j일 H:i" }} 기준
+          </span>
+        {% else %}
+          <span class="hero-time-text">데이터 없음</span>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="hero-main-row">
+      <div class="hero-image-wrapper">
+        {% if latest and latest.image %}
+          <img src="{{ latest.image.url }}" alt="{{ latest.title }}">
+        {% else %}
+          <img src="{% static 'blog_image/default_error.png' %}" alt="기본 이미지">
+        {% endif %}
+      </div>
+
+      <div class="hero-right-panel">
+        <div class="hero-status-row">
+          {% if latest %}
+            {% if "여유" in latest.title %}
+              <span class="status-pill status-low">😊 여유</span>
+            {% elif "보통" in latest.title %}
+              <span class="status-pill status-mid">🙂 보통</span>
+            {% else %}
+              <span class="status-pill status-high">🚨혼잡</span>
+            {% endif %}
+          {% else %}
+            <span class="status-pill status-unknown">데이터 없음</span>
+          {% endif %}
+          <span class="status-label">현재 혼잡도</span>
+        </div>
+
+        <p class="hero-description">
+          {% if latest %}
+            {{ latest.text|linebreaksbr }}
+          {% else %}
+            아직 감지 기록이 없습니다. 카메라와 YOLO 서버를 실행하면 이곳에서 상태가 갱신됩니다.
+          {% endif %}
+        </p>
+
+        <div class="hero-quick-stats">
+          <div class="hero-stat-card">
+            <p class="stat-label">오늘 등록된 알림</p>
+            <p class="stat-value">{{ posts|length }}건</p>
+      </div>
+    </div>
+  </section>
+  {% endwith %}
+
+  {# === 하단: 실시간 알림 카드 그리드 === #}
+  <section class="admin-feed-section">
+    <div class="feed-header-row">
+      <h2>실시간 알림 피드</h2>
+      <span class="feed-count">{{ posts|length }}건</span>
+    </div>
+
+    {% if posts %}
+      <div class="feed-grid">
+        {% for post in posts %}
+          <article class="feed-card">
+            <div class="feed-image">
+              {% if post.image %}
+                <img src="{{ post.image.url }}" alt="{{ post.title }}">
+              {% else %}
+                <img src="{% static 'blog_image/default_error.png' %}" alt="기본 이미지">
+              {% endif %}
+            </div>
+
+            <div class="feed-body">
+              <div class="feed-status-row">
+                {% if "여유" in post.title %}
+                  <span class="feed-pill pill-low">여유</span>
+                {% elif "보통" in post.title %}
+                  <span class="feed-pill pill-mid">보통</span>
+                {% else %}
+                  <span class="feed-pill pill-high">혼잡</span>
+                {% endif %}
+                <span class="feed-time">
+                  {{ post.published_date|date:"Y년 n월 j일 H:i" }}
+                </span>
+              </div>
+
+              <h3 class="feed-title">
+                {{ post.title }}
+              </h3>
+              <p class="feed-text">
+                {{ post.text|truncatewords:18 }}
+              </p>
+            </div>
+
+            <div class="feed-actions">
+              <a href="{% url 'post_detail' pk=post.pk %}" class="btn btn-sm">상세 보기</a>
+              <a href="{% url 'post_edit'   pk=post.pk %}" class="btn btn-sm secondary">수정</a>
+              <a href="{% url 'post_delete' pk=post.pk %}" class="btn btn-sm danger">삭제</a>
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="empty-text">
+        아직 알림 기록이 없습니다. 혼잡도 상태가 변할 때마다 이곳에 카드가 자동으로 쌓입니다.
+      </p>
+    {% endif %}
+  </section>
+
+</div>
+{% endblock %}

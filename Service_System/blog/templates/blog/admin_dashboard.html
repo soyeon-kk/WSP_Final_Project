@@ -1,0 +1,194 @@
+{% extends 'blog/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="wrap">
+
+  <div class="topbar">
+    <div class="left">
+      <h1 class="page-title">📊 학생식당 혼잡도 관리자 대시보드</h1>
+      <div class="muted" id="sub">로딩 중...</div>
+    </div>
+
+    <div class="right">
+      <a href="{% url 'post_list' %}" class="btn dark">← 메인(피드)</a>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <div class="muted">최근 1시간 이벤트 수</div>
+      <div class="kpi" id="kpi1">-</div>
+    </div>
+
+    <div class="card">
+      <div class="muted">현재 상태</div>
+      <div style="margin-top:10px;">
+        <span class="badge b-mid" id="statusBadge">-</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="muted">최근 24시간 이벤트 수</div>
+      <div class="kpi" id="kpi3">-</div>
+    </div>
+  </div>
+
+  <div class="charts">
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title">좌석 / 대기열 추이</div>
+        <div class="muted">최근 데이터</div>
+      </div>
+      <canvas id="lineChart" height="120"></canvas>
+    </div>
+
+    <div class="card">
+      <div class="card-title" style="margin-bottom:8px;">상태 비율</div>
+      <canvas id="donutChart" height="200"></canvas>
+    </div>
+  </div>
+
+  <div class="charts2">
+    <div class="card">
+      <div class="card-title" style="margin-bottom:8px;">이벤트 발생 빈도(10분 단위)</div>
+      <canvas id="barChart" height="140"></canvas>
+    </div>
+
+    <div class="card">
+      <div class="card-title" style="margin-bottom:8px;">이상치 로그</div>
+      <table class="tbl">
+        <thead>
+          <tr><th>시간</th><th>문제</th></tr>
+        </thead>
+        <tbody id="anomalyBody">
+          <tr><td colspan="2" class="muted">-</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  let lineChart, barChart, donutChart;
+
+  function setStatusBadge(st) {
+    const el = document.getElementById("statusBadge");
+    if (!st) { el.textContent = "-"; el.className = "badge b-mid"; return; }
+    if (st.includes("혼잡")) { el.textContent = "😵 혼잡"; el.className = "badge b-bad"; return; }
+    if (st.includes("보통")) { el.textContent = "🙂 보통"; el.className = "badge b-mid"; return; }
+    el.textContent = "😊 여유"; el.className = "badge b-ok";
+  }
+
+  async function loadDashboard() {
+    const res = await fetch("{% url 'admin_dashboard_data' %}");
+    const data = await res.json();
+
+    document.getElementById("sub").textContent =
+      data.latest_at ? `마지막 업데이트: ${data.latest_at}` : "데이터 없음";
+
+    document.getElementById("kpi1").textContent = data.summary?.events_1h ?? "-";
+    document.getElementById("kpi3").textContent = data.summary?.events_24h ?? "-";
+    setStatusBadge(data.latest_status);
+
+    // Line
+    const L = data.charts?.line?.labels ?? [];
+    const remain = data.charts?.line?.remain ?? [];
+    const queue = data.charts?.line?.queue ?? [];
+
+    if (lineChart) lineChart.destroy();
+    lineChart = new Chart(document.getElementById("lineChart"), {
+      type: "line",
+      data: {
+        labels: L,
+        datasets: [
+          { label: "남은좌석", data: remain, tension: 0.25 },
+          { label: "대기열", data: queue, tension: 0.25 },
+        ],
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: true } },
+        scales: { y: { beginAtZero: true } }
+      }
+    });
+
+    // Bar
+    const BL = data.charts?.events?.labels ?? [];
+    const BV = data.charts?.events?.values ?? [];
+
+    if (barChart) barChart.destroy();
+    barChart = new Chart(document.getElementById("barChart"), {
+      type: "bar",
+      data: { labels: BL, datasets: [{ label: "이벤트 수", data: BV }] },
+      options: { responsive: true, plugins: { legend: { display: false } } }
+    });
+
+    // Donut
+    const sc = data.charts?.status ?? {};
+    const d1 = sc["여유"] || 0;
+    const d2 = sc["보통"] || 0;
+    const d3 = sc["혼잡"] || 0;
+
+    if (donutChart) donutChart.destroy();
+    donutChart = new Chart(document.getElementById("donutChart"), {
+      type: "doughnut",
+      data: {
+        labels: ["여유", "보통", "혼잡"],
+        datasets: [{ data: [d1, d2, d3] }]
+      },
+      options: { responsive: true }
+    });
+
+    // anomalies
+    const body = document.getElementById("anomalyBody");
+    body.innerHTML = "";
+    const rows = data.anomalies || [];
+    if (rows.length === 0) {
+      body.innerHTML = `<tr><td colspan="2" class="muted">이상치 없음</td></tr>`;
+    } else {
+      for (const r of rows.slice().reverse()) {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${r.time}</td><td>${r.issue}</td>`;
+        body.appendChild(tr);
+      }
+    }
+  }
+
+  loadDashboard();
+  setInterval(loadDashboard, 10000);
+</script>
+
+<style>
+  .wrap { max-width: 1100px; margin: 24px auto; padding: 0 16px; }
+
+  .topbar { display:flex; justify-content:space-between; align-items:flex-end; gap:12px; margin-bottom: 14px; }
+  .page-title { margin:0; font-size: 22px; }
+  .muted { color:#6B7280; font-size: 13px; }
+
+  .grid { display:grid; grid-template-columns: repeat(3, 1fr); gap:12px; margin: 12px 0 18px; }
+  .charts { display:grid; grid-template-columns: 2fr 1fr; gap:12px; }
+  .charts2 { display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-top:12px; }
+
+  .card { background:#fff; border-radius:16px; padding:14px; box-shadow: 0 6px 20px rgba(0,0,0,.06); }
+  .card-head { display:flex; justify-content:space-between; align-items:center; }
+  .card-title { font-weight:700; }
+
+  .kpi { font-size: 22px; font-weight: 800; margin-top:6px; }
+
+  .badge { display:inline-block; padding:6px 10px; border-radius:999px; font-weight:800; font-size:12px; }
+  .b-ok{ background:#DCFCE7; color:#166534; }
+  .b-mid{ background:#FEF9C3; color:#854D0E; }
+  .b-bad{ background:#FEE2E2; color:#991B1B; }
+
+  .btn { display:inline-block; padding:8px 12px; border-radius:10px; text-decoration:none; font-weight:800; font-size:13px; }
+  .btn.dark { background:#111827; color:white; }
+  .btn.danger { background:#EF4444; color:white; }
+
+  .tbl { width:100%; border-collapse:collapse; font-size:13px; }
+  .tbl th, .tbl td { text-align:left; padding:10px; border-bottom:1px solid #EEF2F7; }
+  .tbl th { color:#6B7280; font-weight:700; }
+</style>
+{% endblock %}
